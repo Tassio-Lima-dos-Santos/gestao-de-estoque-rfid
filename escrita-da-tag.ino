@@ -19,16 +19,6 @@ byte block = 0;
 byte sector = 0;
 byte input[48];
 
-// Declaração de funções úteis
-void dump_byte_array(byte *buffer, byte bufferSize);
-// void dump_string(byte *buffer, byte bufferSize); Ao invés de criar uma função inútil que nem um otário, só use Serial.write(byte *buffer, int size)
-void authenticate();
-void write_on_block(byte *buffer, byte bufferSize);
-void write_on_sector(byte *buffer, byte bufferSize);
-void read_block(byte *buffer, byte bufferSize);
-void read_section(byte *buffer, byte bufferSize);
-void bufferClean();
-
 void setup() {
   Serial.begin(9600);
   while (!Serial);
@@ -48,17 +38,17 @@ void loop() {
   Serial.println(F("Digite o nome do material"));
   readSerial();
   sector = secaoNome;
-  write_on_sector(input, 48);
+  if(write_on_sector(input, 48)) return;
 
   Serial.println(F("Digite o lote do material"));
   readSerial();
   sector = secaoLote;
-  write_on_sector(input, 48);
+  if(write_on_sector(input, 48)) return;
 
   Serial.println(F("Digite o fornecedor do material"));
   readSerial();
   sector = secaoFornecedor;
-  write_on_sector(input, 48);
+  if(write_on_sector(input, 48)) return;
 
   Serial.println(F("Escrita concluída!"));
   Serial.println();
@@ -74,44 +64,58 @@ void dump_byte_array(byte *buffer, byte bufferSize) {
     }
 }
 
-void authenticate(){
+int authenticate(){
   status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &(mfrc522.uid));
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("PCD_Authenticate() failed: "));
     Serial.println(mfrc522.GetStatusCodeName(status));
+    return 1;
   }
+  return 0;
 }
 
-void write_on_block(byte *buffer, byte bufferSize){
-  authenticate();
+int write_on_block(byte *buffer, byte bufferSize){
+  if(authenticate()) return 1;
   status = mfrc522.MIFARE_Write(block, buffer, 16);
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("MIFARE_Write() failed: "));
     Serial.println(mfrc522.GetStatusCodeName(status));
+    return 1;
   }
+  return 0;
 }
 
-void write_on_sector(byte *buffer, byte bufferSize){
+int write_on_sector(byte *buffer, byte bufferSize){
   for(int i = 0; i < 3; i++){
     block = sector*4+i;
-    write_on_block(buffer+i*16, 16);
+    if(write_on_block(buffer+i*16, 16)){
+      Serial.println("ERRO NA ESCRITA!!!");
+      return 1;
+    }
   }
+  return 0;
 }
 
-void read_block(byte *buffer, byte bufferSize){
-  authenticate();
+int read_block(byte *buffer, byte bufferSize){
+  if(authenticate()) return 1;
   status = mfrc522.MIFARE_Read(block, buffer, &bufferSize);
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("Reading failed: "));
     Serial.println(mfrc522.GetStatusCodeName(status));
+    return 1;
   }
+  return 0;
 }
 
-void read_section(byte *buffer, byte bufferSize){
+int read_section(byte *buffer, byte bufferSize){
   for(int i = 0; i < 3; i++){
     block = sector*4+i;
-    read_block(buffer+i*16, 18);
+    if(read_block(buffer+i*16, 18)){
+      Serial.println("ERRO NA LEITURA!!!");
+      return 1;
+    }
   }
+  return 0;
 }
 
 void bufferClean(){
