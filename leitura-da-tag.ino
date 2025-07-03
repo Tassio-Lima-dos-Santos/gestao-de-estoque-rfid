@@ -34,23 +34,28 @@ void setup() {
 void loop() {
   if(!(mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial() )) return;
 
-  Serial.print(F("Nome do material: "));
+  //mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
+
+  dump_byte_array(mfrc522.uid.uidByte, (byte)mfrc522.uid.size);
+  Serial.print("|");
+  
+  //Serial.print(F("Nome do material: "));
   sector = secaoNome;
   if(read_section(input, 48)) return;
   Serial.write(input, 48);
-  Serial.println();
+  Serial.print("|");
 
-  Serial.print(F("Lote do material: "));
+  //Serial.print(F("Lote do material: "));
   sector = secaoLote;
   if(read_section(input, 48)) return;
   Serial.write(input, 48);
-  Serial.println();
+  Serial.print("|");
 
-  Serial.print(F("Fornecedor do material: "));
+  //Serial.print(F("Fornecedor do material: "));
   sector = secaoFornecedor;
   if(read_section(input, 48)) return;
   Serial.write(input, 48);
-  Serial.println();
+  Serial.print("|");
 
   Serial.println();
 
@@ -60,7 +65,7 @@ void loop() {
 
 void dump_byte_array(byte *buffer, byte bufferSize) {
     for (byte i = 0; i < bufferSize; i++) {
-        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+        Serial.print(buffer[i] < 0x10 ? " 0" : "");
         Serial.print(buffer[i], HEX);
     }
 }
