@@ -41,26 +41,34 @@ void loop() {
   
   //Serial.print(F("Nome do material: "));
   sector = secaoNome;
-  if(read_section(input, 48)) return;
+  if(read_section(input, 48)){
+    quitComm();
+    return;
+  }
   Serial.write(input, 48);
   Serial.print("|");
 
   //Serial.print(F("Lote do material: "));
   sector = secaoLote;
-  if(read_section(input, 48)) return;
+  if(read_section(input, 48)){
+    quitComm();
+    return;
+  }
   Serial.write(input, 48);
   Serial.print("|");
 
   //Serial.print(F("Fornecedor do material: "));
   sector = secaoFornecedor;
-  if(read_section(input, 48)) return;
+  if(read_section(input, 48)){
+    quitComm();
+    return;
+  }
   Serial.write(input, 48);
-  Serial.print("|");
+  //Serial.print("|");
 
   Serial.println();
 
-  mfrc522.PICC_HaltA();
-  mfrc522.PCD_StopCrypto1();
+  quitComm();
 }
 
 void dump_byte_array(byte *buffer, byte bufferSize) {
@@ -133,4 +141,26 @@ void bufferClean(){
 void readSerial(){
   bufferClean();
   while(Serial.readBytes(input, 48) < 1);
+  slashNDelete();
+}
+
+void slashNDelete(){
+  for(int i = 0; i < 48; i++){
+    if(input[i] == '\n'){
+      input[i] = '\0';
+    }
+  }
+}
+
+float readSerial_float(){ // Função que limpa o array input e salva os 48 primeiros bytes lidos no monitor serial no array input. A função espera até ler algo.
+  float entrada;
+  do{
+    entrada = Serial.parseFloat();
+  }while(entrada <= 0);
+  return entrada;
+}
+
+void quitComm(){
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
 }
